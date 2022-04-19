@@ -1,0 +1,15 @@
+1711380afcc4d5bd56f40becec2ea352 *DESCRIPTION
+950f89062f038176f7a795ea4301b4d6 *NAMESPACE
+295fc37c70c6a2035a4597ed1120bbec *NEWS.md
+6e833667506801e15f0097bde82d529f *R/read_chroms.R
+7470b34f138a817652f91026b445210d *R/zzz.R
+d1f18792be071600ed99403ebf4b9185 *README.md
+f92dbb1eac15a35adfbb9ff460ef8640 *inst/WORDLIST
+fa9f80d78ae4bd4c80c42b5b4d8ca193 *man/read_chroms.Rd
+897d8a672bbf297ce0b8ec47cbb83313 *man/sp_converter.Rd
+55e70876352dda423ca4f247576746b8 *man/uv_converter.Rd
+a23671a1cc532d23881813c001ab7423 *tests/testthat.R
+ef27afb8a2a61f78340306ad30af702c *tests/testthat/helpers.R
+d12a0966766e7b3fb6058cd244540fe1 *tests/testthat/test-read_chroms.R
+28a0913d6e28ef256001452f2ca2d0ca *tests/testthat/testdata/DAD1.CSV
+b3e81c6c036ce2c04d6794415b5d426f *tests/testthat/testdata/dad1.uv
