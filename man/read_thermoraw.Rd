@@ -2,37 +2,43 @@
 % Please edit documentation in R/read_thermoraw.R
 \name{read_thermoraw}
 \alias{read_thermoraw}
-\title{Read ThermoRaw files into R using ThermoRawFileParser}
+\title{Read ThermoRaw}
 \usage{
 read_thermoraw(
-  path_in,
-  path_out,
+  path,
+  path_out = NULL,
   format_out = c("matrix", "data.frame"),
-  read_metadata = TRUE
+  read_metadata = TRUE,
+  metadata_format = c("chromconverter", "raw"),
+  verbose = getOption("verbose")
 )
 }
 \arguments{
-\item{path_in}{path to file}
+\item{path}{Path to 'Thermo' \code{.raw} file.}
 
-\item{path_out}{directory to export \code{mzML} files.}
+\item{path_out}{Path to directory to export \code{mzML} files. If
+\code{path_out} isn't specified, a temp directory will be used.}
 
 \item{format_out}{R format. Either \code{matrix} or \code{data.frame}.}
 
 \item{read_metadata}{Whether to read metadata from file.}
+
+\item{metadata_format}{Format to output metadata. Either \code{chromconverter} or
+\code{raw}.}
+
+\item{verbose}{Logical. Whether to print output from OpenChrom to the console.}
 }
 \value{
 A chromatogram in the format specified by \code{format_out}.
 }
 \description{
-Converts ThermoRawFiles to mzmL by calling the ThermoRawFileParser from the
-command-line.
+Converts ThermoRawFiles to \code{mzML} by calling the \href{https://github.com/compomics/ThermoRawFileParser}{ThermoRawFileParser} from the command-line.
 }
 \details{
-To use this function, the \href{https://github.com/compomics/ThermoRawFileParser}{ThermoRawFileParser}
-must be manually installed.
+To use this function, the ThermoRawFileParser must be manually installed.
 }
 \section{Side effects}{
- Exports chromatograms in \code{mzml format} to the
+ Exports chromatograms in \code{mzML} format to the
 folder specified by \code{path_out}.
 }
 
@@ -44,10 +50,19 @@ read_thermoraw(path)
 \references{
 Hulstaert Niels, Jim Shofstahl, Timo Sachsenberg, Mathias Walzer,
 Harald Barsnes, Lennart Martens, and Yasset Perez-Riverol.
-“=ThermoRawFileParser: Modular, Scalable, and Cross-Platform RAW File Conversion.”
+ThermoRawFileParser: Modular, Scalable, and Cross-Platform RAW File Conversion.
 \emph{Journal of Proteome Research} \bold{19}, no. 1 (January 3, 2020): 537–42.
 \doi{10.1021/acs.jproteome.9b00328}.
+}
+\seealso{
+Other external parsers: 
+\code{\link{call_entab}()},
+\code{\link{call_openchrom}()},
+\code{\link{call_rainbow}()},
+\code{\link{sp_converter}()},
+\code{\link{uv_converter}()}
 }
 \author{
 Ethan Bass
 }
+\concept{external parsers}
