@@ -1,28 +1,17 @@
 #' Read 'Agilent ChemStation' DAD files
 #'
-#' Agilent \code{.uv} files come in several different formats. This parser can
+#' Agilent `.uv` files come in several different formats. This parser can
 #' automatically detect and read several versions of these files from
-#' 'Agilent ChemStation' and 'Agilent OpenLab', including versions \code{31} and
-#' \code{131}.
+#' 'Agilent ChemStation' and 'Agilent OpenLab', including versions `31` and
+#' `131`.
 #'
 #' @importFrom utils head tail
-#' @param path Path to 'Agilent' \code{.uv} file.
-#' @param format_out Class of output. Either \code{matrix}, \code{data.frame},
-#' or \code{data.table}.
-#' @param data_format Either \code{wide} (default) or \code{long}.
-#' @param read_metadata Logical. Whether to attach metadata. Defaults to \code{TRUE}.
-#' @param metadata_format Format to output metadata. Either \code{chromconverter}
-#' or \code{raw}.
+#' @inheritParams shared_params
+#' @param path Path to 'Agilent' `.uv` file.
 #' @param scale Whether to scale the data by the scaling factor present in the
-#' file. Defaults to \code{TRUE}.
-#' @return A 3D chromatogram in the format specified by \code{data_format} and
-#' \code{format_out}. If \code{data_format} is \code{wide}, the chromatogram will
-#' be returned with retention times as rows and wavelengths as columns. If
-#' \code{long} format is requested, three columns will be returned: one for the
-#' retention time, one for the wavelength and one for the intensity. The
-#' \code{format_out} argument determines whether the chromatogram is returned as
-#' a \code{matrix} or \code{data.frame}. Metadata can be attached to the
-#' chromatogram as \code{\link{attributes}} if \code{read_metadata} is \code{TRUE}.
+#' file. Defaults to `TRUE`.
+#' @param source_file Source file from which UV data was originally derived.
+#' @inherit generic_return_3D return
 #' @examplesIf interactive()
 #' read_chemstation_uv("tests/testthat/testdata/dad1.uv")
 #' @author Ethan Bass
@@ -37,34 +26,34 @@ read_chemstation_uv <- function(path, format_out = c("matrix", "data.frame",
                                 data_format = c("wide", "long"),
                                 read_metadata = TRUE,
                                 metadata_format = c("chromconverter", "raw"),
-                                scale = TRUE){
+                                scale = TRUE, source_file = NULL){
   format_out <- check_format_out(format_out)
-  data_format <- match.arg(data_format, c("wide", "long"))
+  data_format <- check_data_format(data_format, format_out)
   metadata_format <- match.arg(metadata_format, c("chromconverter", "raw"))
   metadata_format <- switch(metadata_format,
                             chromconverter = "chemstation_uv", raw = "raw")
-
+  source_file <- ifelse(is.null(source_file), path, source_file)
   f <- file(path, "rb")
   on.exit(close(f))
 
-  version <- read_cs_string(f)
+  file_version <- read_cs_string(f)
   seek(f, 348, "start")
   file_type_code <- paste(file_type_name = readBin(f, "character", n = 2),
                           collapse = "")
-  version <- match.arg(version, choices = c("31", "131"))
+  file_version <- match.arg(file_version, choices = c("31", "131"))
 
-  if (version == "131"){
-    version <- paste(version, file_type_code, sep = "_")
+  if (file_version == "131"){
+    file_version <- paste(file_version, file_type_code, sep = "_")
   }
 
-  offsets <- get_agilent_offsets(version)
+  offsets <- get_agilent_offsets(file_version)
 
-  n_metadata_fields <- switch(version, "131_LC" = 10,
+  n_metadata_fields <- switch(file_version, "131_LC" = 10,
                                        "131_OL" = 8,
                                        "31" = 8)
 
   meta <- lapply(offsets[seq_len(n_metadata_fields)], function(offset){
-    type <- switch(version, "31" = 1, 2)
+    type <- switch(file_version, "31" = 1, 2)
     seek(f, where = offset, origin = "start")
     read_cs_string(f, type = type)
   })
@@ -94,7 +83,7 @@ read_chemstation_uv <- function(path, format_out = c("matrix", "data.frame",
   seek(f, where = offsets$data_start, origin = "start")
 
   # Read data and populate arrays
-  decode_array <- switch(version, "131_OL" = decode_uv_array,
+  decode_array <- switch(file_version, "131_OL" = decode_uv_array,
                     "131_LC" = decode_uv_delta,
                     "31" = decode_uv_delta)
 
@@ -105,9 +94,10 @@ read_chemstation_uv <- function(path, format_out = c("matrix", "data.frame",
   colnames(data) <- lambdas
 
   if (data_format == "long"){
-    data <- reshape_chrom(data)
+    data <- reshape_chrom_long(data)
   }
-  data <- convert_chrom_format(data, format_out = format_out)
+  data <- convert_chrom_format(data, format_out = format_out,
+                               data_format = data_format)
 
   if (read_metadata){
     metadata_from_file <- try(read_chemstation_metadata(path), silent = TRUE)
@@ -121,8 +111,8 @@ read_chemstation_uv <- function(path, format_out = c("matrix", "data.frame",
     meta$detector_x_unit <- "nm"
     data <- attach_metadata(data, meta, format_in = metadata_format,
                     data_format = data_format, format_out = format_out,
-                    parser = "chromconverter", source_file = path,
-                    source_file_format = paste0("chemstation_", version),
+                    parser = "chromconverter", source_file = source_file,
+                    source_file_format = paste0("chemstation_", file_version),
                     scale = scale)
   }
   data

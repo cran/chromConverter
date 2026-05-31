@@ -13,32 +13,32 @@ sp_converter(
 )
 }
 \arguments{
-\item{path}{Path to file}
+\item{path}{Path to file.}
 
-\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame},
-or \code{data.table}.}
+\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame}, or
+\code{data.table}.}
 
-\item{data_format}{Whether to return data in \code{wide} or \code{long} format.}
+\item{data_format}{Whether to return data in \code{wide} (default) or \code{long} format.}
 
-\item{read_metadata}{Logical. Whether to read metadata and attach it to the
-chromatogram.}
+\item{read_metadata}{Logical. Whether to attach metadata. Defaults to \code{TRUE}.}
 
 \item{metadata_format}{Format to output metadata. Either \code{chromconverter}
 or \code{raw}.}
 }
 \value{
-A chromatogram in \code{data.frame} format (retention time x wavelength).
+A chromatogram in the format specified by the \code{format_out} and
+\code{data_format} arguments.
 }
 \description{
 Converts a single chromatogram from MassHunter \code{.sp} format to R
 \code{data.frame} using the \href{https://github.com/bovee/aston}{Aston} file parser.
 }
 \seealso{
-Other external parsers: 
-\code{\link{call_entab}()},
-\code{\link{call_openchrom}()},
-\code{\link{call_rainbow}()},
-\code{\link{read_thermoraw}()},
-\code{\link{uv_converter}()}
+Other external parsers:
+\code{\link[=call_entab]{call_entab()}},
+\code{\link[=call_openchrom]{call_openchrom()}},
+\code{\link[=call_rainbow]{call_rainbow()}},
+\code{\link[=read_thermoraw]{read_thermoraw()}},
+\code{\link[=uv_converter]{uv_converter()}}
 }
 \concept{external parsers}

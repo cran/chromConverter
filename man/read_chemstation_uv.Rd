@@ -10,16 +10,17 @@ read_chemstation_uv(
   data_format = c("wide", "long"),
   read_metadata = TRUE,
   metadata_format = c("chromconverter", "raw"),
-  scale = TRUE
+  scale = TRUE,
+  source_file = NULL
 )
 }
 \arguments{
 \item{path}{Path to 'Agilent' \code{.uv} file.}
 
-\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame},
-or \code{data.table}.}
+\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame}, or
+\code{data.table}.}
 
-\item{data_format}{Either \code{wide} (default) or \code{long}.}
+\item{data_format}{Whether to return data in \code{wide} (default) or \code{long} format.}
 
 \item{read_metadata}{Logical. Whether to attach metadata. Defaults to \code{TRUE}.}
 
@@ -28,6 +29,8 @@ or \code{raw}.}
 
 \item{scale}{Whether to scale the data by the scaling factor present in the
 file. Defaults to \code{TRUE}.}
+
+\item{source_file}{Source file from which UV data was originally derived.}
 }
 \value{
 A 3D chromatogram in the format specified by \code{data_format} and
@@ -36,8 +39,8 @@ be returned with retention times as rows and wavelengths as columns. If
 \code{long} format is requested, three columns will be returned: one for the
 retention time, one for the wavelength and one for the intensity. The
 \code{format_out} argument determines whether the chromatogram is returned as
-a \code{matrix} or \code{data.frame}. Metadata can be attached to the
-chromatogram as \code{\link{attributes}} if \code{read_metadata} is \code{TRUE}.
+a \code{matrix}, \code{data.frame}, or \code{data.table}. Metadata will be attached to the
+chromatogram as \link{attributes} if \code{read_metadata} is \code{TRUE}.
 }
 \description{
 Agilent \code{.uv} files come in several different formats. This parser can
@@ -56,13 +59,13 @@ read_chemstation_uv("tests/testthat/testdata/dad1.uv")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-Other 'Agilent' parsers: 
-\code{\link{read_agilent_d}()},
-\code{\link{read_agilent_dx}()},
-\code{\link{read_chemstation_ch}()},
-\code{\link{read_chemstation_csv}()},
-\code{\link{read_chemstation_ms}()},
-\code{\link{read_chemstation_reports}()}
+Other 'Agilent' parsers:
+\code{\link[=read_agilent_d]{read_agilent_d()}},
+\code{\link[=read_agilent_dx]{read_agilent_dx()}},
+\code{\link[=read_chemstation_ch]{read_chemstation_ch()}},
+\code{\link[=read_chemstation_csv]{read_chemstation_csv()}},
+\code{\link[=read_chemstation_ms]{read_chemstation_ms()}},
+\code{\link[=read_chemstation_reports]{read_chemstation_reports()}}
 }
 \author{
 Ethan Bass

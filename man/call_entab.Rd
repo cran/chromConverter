@@ -16,31 +16,31 @@ call_entab(
 \arguments{
 \item{path}{Path to file.}
 
-\item{data_format}{Whether to return data in \code{wide} or \code{long} format.}
+\item{data_format}{Whether to return data in \code{wide} (default) or \code{long} format.}
 
-\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame},
-or \code{data.table}.}
+\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame}, or
+\code{data.table}.}
 
 \item{format_in}{Format of input.}
 
-\item{read_metadata}{Whether to read metadata from file.}
+\item{read_metadata}{Logical. Whether to attach metadata. Defaults to \code{TRUE}.}
 
 \item{metadata_format}{Format to output metadata. Either \code{chromconverter}
 or \code{raw}.}
 }
 \value{
-A chromatogram in the format specified by \code{format_out}
-(retention time x wavelength).
+A chromatogram in the format specified by the \code{format_out} and
+\code{data_format} arguments.
 }
 \description{
 Converts chromatography date files using \href{https://github.com/bovee/entab}{entab} parsers.
 }
 \seealso{
-Other external parsers: 
-\code{\link{call_openchrom}()},
-\code{\link{call_rainbow}()},
-\code{\link{read_thermoraw}()},
-\code{\link{sp_converter}()},
-\code{\link{uv_converter}()}
+Other external parsers:
+\code{\link[=call_openchrom]{call_openchrom()}},
+\code{\link[=call_rainbow]{call_rainbow()}},
+\code{\link[=read_thermoraw]{read_thermoraw()}},
+\code{\link[=sp_converter]{sp_converter()}},
+\code{\link[=uv_converter]{uv_converter()}}
 }
 \concept{external parsers}

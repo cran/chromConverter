@@ -4,15 +4,15 @@
 #'
 #' Varian SMS files begin with a "DIRECTORY" with offsets for each section. The
 #' first section (in all the files I've been able to inspect) is "MSData"
-#' generally beginning at byte 3238. This MSdata section is in turn divided into
+#' generally beginning at byte `3238`. This MSdata section is in turn divided into
 #' two sections. The first section (after a short header) contains chromatogram
 #'  data. Some of the information found in this section includes scan numbers,
-#' retention times, (as 64-bit
-#' floats), the total ion chromatogram (TIC), the base peak chromatogram (BPC),
-#' ion time (µsec), as well as some other unidentified information. The scan
-#' numbers and intensities for the TIC and BPC are stored at 4-byte
-#' little-endian integers. Following this section, there is a series of null
-#' bytes, followed by a series of segments containing the mass spectra.
+#' retention times, (as 64-bit floats), the total ion chromatogram (TIC), the
+#' base peak chromatogram (BPC), ion time (µsec), as well as some other
+#' unidentified information. The scan numbers and intensities for the TIC and
+#' BPC are stored at 4-byte little-endian integers. Following this section,
+#' there is a series of null bytes, followed by a series of segments containing
+#' the mass spectra.
 #'
 #' The encoding scheme for the mass spectra is somewhat more complicated. Each
 #' scan is represented by a series of values of variable length separated from
@@ -20,10 +20,10 @@
 #' The first value in each pair represents the delta-encoded mass-to-charge ratio,
 #' while the second value represents the intensity of the signal. Values in this
 #' section are variable-length, big-endian integers that are encoded using a
-#' selective bit masking based on the leading digit (\code{d}) of each value.
+#' selective bit masking based on the leading digit (`d`) of each value.
 #' The length of each integer seems to be determined as 1 + (d %/% 4). Integers
 #' beginning with digits 0-3 are simple 2-byte integers. If d >= 4, values are
-#' determined by masking to preserve the lowest \code{n} bits according to the
+#' determined by masking to preserve the lowest `n` bits according to the
 #' following scheme:
 #'
 #' * d = 4-5 -> preserve lowest 13 bits
@@ -33,18 +33,13 @@
 #' * d = 12-13 (C-D) -> preserve lowest 27 bits
 #' * d = 14-15 (E-F) -> preserve lowest 28 bits (?)
 #'
-#' @param path Path to 'Varian' \code{.SMS} files.
-#' @param what Whether to extract chromatograms (\code{chroms}) and/or
-#' \code{MS1} data. Accepts multiple arguments.
-#' @param format_out R format. Either \code{matrix} or \code{data.frame}.
-#' @param data_format Whether to return data in \code{wide} or \code{long} format.
-#' @param read_metadata Whether to read metadata from file. (This is just a
-#' placeholder for now as there is not yet support for parsing metadata).
-#' @param collapse Logical. Whether to collapse lists that only contain a single
-#' element.
-#' @return A chromatogram or list of chromatograms from the specified
-#' \code{file},  according to the value of \code{what}. Chromatograms are
-#' returned in the format specified by \code{format_out}.
+#' @inheritParams shared_params
+#' @param path Path to 'Varian' `.SMS` files.
+#' @param what Whether to extract chromatograms (`chroms`) and/or `MS1` data.
+#' Accepts multiple arguments.
+#' @return A chromatogram or list of chromatograms from the specified file,
+#' according to the value of `what`. Chromatograms are returned in the format
+#' specified by `format_out`.
 #' @author Ethan Bass
 #' @note There is still only limited support for the extraction of metadata from
 #' this file format. Also, the timestamp conversions aren't quite right.
@@ -56,12 +51,12 @@
 
 read_varian_sms <- function(path, what = c("MS1", "TIC", "BPC"),
                             format_out = c("matrix", "data.frame", "data.table"),
-                            data_format = c("wide", "long"),
+                            data_format = "long",
                             read_metadata = TRUE, collapse = TRUE){
 
   what <- match.arg(what, c("MS1", "TIC", "BPC", "chroms"), several.ok = TRUE)
   format_out <- check_format_out(format_out)
-  data_format <- match.arg(data_format, c("wide", "long"))
+  data_format <- check_data_format(data_format, format_out)
 
   f <- file(path, "rb")
   on.exit(close(f))
@@ -78,24 +73,21 @@ read_varian_sms <- function(path, what = c("MS1", "TIC", "BPC"),
   n_scans <- nrow(chroms) - acq_delay
   if ("MS1" %in% what){
     MS1 <- read_varian_ms_stream(f, n_scans = n_scans, format_out = format_out)
-
     MS1[,1] <- chroms[(MS1[,1] + acq_delay), "rt"]
     colnames(MS1) <- c("rt", "mz", "intensity")
   }
 
   if (any(what == "TIC")){
     TIC <- format_2d_chromatogram(rt = chroms[,"rt"], int = chroms[,"tic"],
-                                  data_format = "long",
+                                  data_format = data_format,
                                   format_out = format_out)
   }
   if (any(what == "BPC")){
     BPC <- format_2d_chromatogram(rt = chroms[,"rt"], int = chroms[,"bpc"],
-                                  data_format = "long",
+                                  data_format = data_format,
                                   format_out = format_out)
   }
   dat <- mget(what)
-  if (collapse)
-    dat <- collapse_list(dat)
   if (read_metadata){
     offsets <- read_varian_offsets(f)
 
@@ -105,11 +97,15 @@ read_varian_sms <- function(path, what = c("MS1", "TIC", "BPC"),
 
     meta <- read_mod_metadata(f, offsets, meta)
 
-    dat <- lapply(dat, function(x){
+    dat <- purrr::imap(dat, function(x, h){
       attach_metadata(x, meta, format_in = "varian_sms",
-                           format_out = format_out, data_format = "long",
-                           source_file = path, source_file_format = "varian_sms")
+                      format_out = format_out,
+                      data_format = ifelse(h == "MS1", "long", data_format),
+                      source_file = path, source_file_format = "varian_sms")
     })
+  }
+  if (collapse){
+    dat <- collapse_list(dat)
   }
   dat
 }
@@ -155,7 +151,7 @@ read_mod_metadata <- function(f, offsets, meta){
 #' @param f Connection to a 'Varian' SMS file opened to the beginning of the
 #' chromatogram.
 #' @param format_out Matrix or data.frame.
-#' @param data_format Either \code{wide} (default) or \code{long}.
+#' @param data_format Either `wide` (default) or `long`.
 #' @author Ethan Bass
 #' @noRd
 
@@ -174,7 +170,7 @@ read_varian_chromatograms <- function(f, n_time, format_out = "data.frame",
     readBin(f, what = "raw", n = 11) # skip 11 unidentified bytes
   }
   if (data_format == "wide"){
-    rownames(dat) <- dat[,"rt"]
+    rownames(dat) <- dat[, "rt"]
     dat <- dat[,-2]
   }
   dat <- convert_chrom_format(dat, format_out = format_out)
@@ -188,6 +184,7 @@ read_varian_chromatograms <- function(f, n_time, format_out = "data.frame",
 #' @noRd
 read_varian_ms_stream <- function(f, n_scans, format_out = "data.frame",
                                   data_format = "wide"){
+  format_out <- ifelse(format_out == "matrix", "data.frame", format_out)
   xx <- lapply(seq_len(n_scans), function(i){
     xx <- read_varian_ms_block(f)
     cbind(scan = i, xx)

@@ -1,17 +1,11 @@
 #' Read 'Waters' RAW
 #'
-#' Reads 'Waters MassLynx' (\code{.raw}) files into R.
+#' Reads 'Waters MassLynx' (`.raw`) files into R.
 #'
 #' @importFrom stats setNames
-#' @param path Path to Waters \code{.raw} file.
-#' @param format_out Class of output. Either \code{matrix}, \code{data.frame},
-#' or \code{data.table}.
-#' @param data_format Either \code{wide} (default) or \code{long}.
-#' @param read_metadata Logical. Whether to attach metadata.
-#' @param metadata_format Format to output metadata. Either \code{chromconverter}
-#' or \code{raw}.
-#' @return A chromatogram in the format specified by \code{format_out}
-#' (retention time x wavelength).
+#' @inheritParams shared_params
+#' @param path Path to Waters `.raw` file.
+#' @inherit shared_params return
 #' @note For now this parser only reads 1D chromatograms (not mass spectra or
 #' DAD data) and does not support parsing of metadata from 'Waters' RAW files.
 #' @author Ethan Bass
@@ -24,7 +18,7 @@ read_waters_raw <- function(path, format_out = c("matrix", "data.frame", "data.t
                              metadata_format = c("chromconverter", "raw")){
 
   format_out <- check_format_out(format_out)
-  data_format <- match.arg(data_format, c("wide", "long"))
+  data_format <- check_data_format(data_format, format_out)
   metadata_format <- match.arg(tolower(metadata_format),
                                c("chromconverter", "raw"))
   metadata_format <- switch(metadata_format,
@@ -73,23 +67,20 @@ read_waters_raw <- function(path, format_out = c("matrix", "data.frame", "data.t
 
 #' Read 'Waters' chromatograms
 #'
-#' Parser for reading 'Waters MassLynx' CHRO (.dat) files into R.
+#' Parser for reading 'Waters MassLynx' CHRO (`.dat`) files into R.
 #'
 #' @importFrom utils head tail
-#' @param path Path to \code{.dat} file.
+#' @param path Path to `.dat` file.
 #' @param format_out Matrix or data.frame.
-#' @param data_format Either \code{wide} (default) or \code{long}.
-#' @return A chromatogram in the format specified by \code{format_out}
-#' (retention time x wavelength).
+#' @param data_format Either `wide` (default) or `long`.
+#' @inherit shared_params return
 #' @author Ethan Bass
 #' @noRd
-
-#magic 80000100 08000200
 
 read_waters_chro <- function(path, format_out = "data.frame",
                             data_format = c("wide", "long")){
 
-  data_format <- match.arg(data_format, c("wide", "long"))
+  data_format <- check_data_format(data_format, format_out)
 
   f <- file(path, "rb")
   on.exit(close(f))

@@ -9,7 +9,7 @@ read_shimadzu(
   what = "chroms",
   format_in = NULL,
   include = c("fid", "lc", "dad", "uv", "tic"),
-  format_out = c("matrix", "data.frame"),
+  format_out = c("matrix", "data.frame", "data.table"),
   data_format = c("wide", "long"),
   peaktable_format = c("chromatographr", "original"),
   read_metadata = TRUE,
@@ -27,17 +27,18 @@ read_shimadzu(
 
 \item{format_in}{This argument is deprecated and is no longer required.}
 
-\item{include}{Which chromatograms to include. Options are \code{fid},
-\code{dad}, \code{uv}, \code{tic}, and \code{status}.}
+\item{include}{Which chromatograms to include. Options are \code{fid}, \code{dad},
+\code{uv}, \code{tic}, and \code{status}.}
 
-\item{format_out}{R format. Either \code{matrix} or \code{data.frame}.}
+\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame}, or
+\code{data.table}.}
 
-\item{data_format}{Whether to return data in \code{wide} or \code{long} format.}
+\item{data_format}{Whether to return data in \code{wide} (default) or \code{long} format.}
 
 \item{peaktable_format}{Whether to return peak tables in \code{chromatographr}
 or \code{original} format.}
 
-\item{read_metadata}{Whether to read metadata from file.}
+\item{read_metadata}{Logical. Whether to attach metadata. Defaults to \code{TRUE}.}
 
 \item{metadata_format}{Format to output metadata. Either \code{chromconverter}
 or \code{raw}.}
@@ -46,21 +47,21 @@ or \code{raw}.}
 \code{data.frame} or a \code{list}.}
 
 \item{collapse}{Logical. Whether to collapse lists that only contain a single
-element.}
+element. Defaults to \code{TRUE}.}
 
 \item{scale}{Whether to scale the data by the scaling factor present in the
 file. Defaults to \code{TRUE}.}
 }
 \value{
-A nested list of elements from the specified \code{file}, where the
-top levels are chromatograms, peak tables, and/or mass spectra according to
-the value of \code{what}. Chromatograms are returned in the format specified
-by \code{format_out} (retention time x wavelength).
+A nested list of elements from the specified file, where the top
+levels are chromatograms, peak tables, and/or mass spectra according to the
+value of \code{what}. Chromatograms are returned in the format specified by
+\code{format_out}.
 }
 \description{
-Reads 'Shimadzu' ASCII (\code{.txt}) files. These files can be exported from
+Reads 'Shimadzu' ASCII \code{.txt}) files. These files can be exported from
 'Shimadzu LabSolutions' by right clicking on samples in the sample list and
-selecting \code{File Conversion:Convert to ASCII}.
+selecting \verb{File Conversion:Convert to ASCII}.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
@@ -69,12 +70,12 @@ read_shimadzu(path)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-Other 'Shimadzu' parsers: 
-\code{\link{read_shimadzu_gcd}()},
-\code{\link{read_shimadzu_lcd}()},
-\code{\link{read_shimadzu_qgd}()},
-\code{\link{read_sz_lcd_2d}()},
-\code{\link{read_sz_lcd_3d}()}
+Other 'Shimadzu' parsers:
+\code{\link[=read_shimadzu_gcd]{read_shimadzu_gcd()}},
+\code{\link[=read_shimadzu_lcd]{read_shimadzu_lcd()}},
+\code{\link[=read_shimadzu_qgd]{read_shimadzu_qgd()}},
+\code{\link[=read_sz_lcd_2d]{read_sz_lcd_2d()}},
+\code{\link[=read_sz_lcd_3d]{read_sz_lcd_3d()}}
 }
 \author{
 Ethan Bass

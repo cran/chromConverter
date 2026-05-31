@@ -7,10 +7,26 @@ check_format_out <- function(format_out){
   match.arg(format_out, c("matrix", "data.frame", "data.table"))
 }
 
+#' Check Data Format Argument
+#'
+#' Make sure that `data_format` argument is "long" when `format_out` is
+#' `"data.table"`.
+#' @noRd
+
+check_data_format <- function(data_format, format_out){
+  if (format_out == "data.table"){
+    data_format <- "long"
+  }
+  match.arg(data_format, c("wide", "long"))
+}
+
 #' Convert chromatogram format
 #' @author Ethan Bass
 #' @noRd
-convert_chrom_format <- function(x, format_out){
+convert_chrom_format <- function(x, format_out, data_format = NULL){
+  if (is.null(data_format)){
+    data_format <- attr(x, "data_format")
+  }
   if (inherits(x, format_out)){
     return(x)
   } else if (format_out == "matrix"){
@@ -18,7 +34,10 @@ convert_chrom_format <- function(x, format_out){
   } else if (format_out == "data.frame"){
     return(as.data.frame(x))
   } else if (format_out == "data.table"){
-    return(data.table::as.data.table(x))
+    return(data.table::as.data.table(x, keep.rownames = ifelse(data_format == "wide",
+                                                               yes = "rt",
+                                                               no = FALSE))
+    )
   }
 }
 
@@ -38,7 +57,8 @@ format_2d_chromatogram <- function(rt, int, data_format, format_out){
   if (format_out == "matrix"){
     dat <- as.matrix(dat)
   } else if (format_out == "data.table"){
-    data.table::setDT(dat)
+    dat <- data.table::as.data.table(dat, keep.rownames = ifelse(data_format == "wide",
+                                                        yes = "rt", no = FALSE))
   }
   dat
 }
@@ -69,12 +89,17 @@ get_filetype <- function(path, out = c("format_in", "filetype")){
                      "x02/x38/x31/x00" = "chemstation_81", #81
                      "x01/x38/x00/x00" = "chemstation_8", #81
                      "x03/x31/x38/x31" = "chemstation_181", #181
+                     "x43/x48/x52/x4f" = "chromatotec",
                      "x01/xa1/x46/x00" = "ThermoRAW",
                      "xd0/xcf/x11/xe0" = "shimadzu_ole",
                      "x1c/x00/x09/x03" = "varian_sms",
                      "x80/x00/x01/x00" = "waters_raw",
-                     "x43/x44/x46/x01" = "cdf"
+                     "x43/x44/x46/x01" = "cdf",
+                     "x50/x4b/x03/x04" = "zip"
   )
+  if (filetype == "zip" && fs::path_ext(path) == "dx"){
+    filetype <- "agilent_dx"
+  }
   if (is.null(filetype)){
     stop("File type not recognized. Please specify a filetype by providing an argument to `format_in`
           or file an issue at `https://github.com/ethanbass/chromConverter/issues`.")
@@ -114,6 +139,7 @@ check_parser <- function(format_in, parser = NULL, find = FALSE){
                                              "cdf", "chemstation_csv",
                                              "chemstation_ch", "chemstation_fid",
                                              "chemstation_uv", "chromeleon_uv",
+                                             "chromatotec",
                                              "chemstation_2", "chemstation_ms",
                                              "chemstation_30", "chemstation_31",
                                              "chemstation_130", "chemstation_131",
@@ -239,6 +265,7 @@ format_to_extension <- function(format_in){
          "shimadzu_gcd" = "\\.gcd$",
          "shimadzu_qgd" = "\\.qgd",
          "chromeleon_uv" = "\\.txt$",
+         "chromatotec" = "\\.Chrom$",
          "thermoraw" = "\\.raw$",
          "cdf" = "\\.cdf$",
          "mzml" = "\\.mzml$",
@@ -303,8 +330,8 @@ check_for_pkg <- function(pkg, return_boolean = FALSE){
 }
 
 #' Choose apply function
-#' @return Returns \code{\link[pbapply]{pblapply}} if \code{progress_bar == TRUE},
-#' otherwise returns \code{\link{lapply}}.
+#' @return Returns [pbapply::pbapply] if `progress_bar == TRUE`,
+#' otherwise returns `lapply`.
 #' @noRd
 choose_apply_fnc <- function(progress_bar, parallel = FALSE, cl = NULL){
   if (progress_bar){
@@ -337,7 +364,7 @@ rename_list <- function(x, new_names){
 #' Collapse list
 #' @noRd
 collapse_list <- function(x){
-  while(is.list(x) && length(x) == 1){
+  while(inherits(x, "list") && length(x) == 1){
     x <- x[[1]]
   }
   x
@@ -350,53 +377,63 @@ split_at <- function(x, pos) unname(split(x, cumsum(seq_along(x) %in% pos)))
 
 #' Configure python environment
 #'
-#' Configures reticulate environment for parsers that have python dependencies.
-#' Deprecated as this should no longer be necessary with reticulate \code{v1.41.0}.
+#' Configures python virtual environment or conda environment for parsers that
+#' have python dependencies, according to the value of `what`. While this
+#' should not be necessary in most cases starting with reticulate `v1.41.0`,
+#' this function can be used to create a dedicated chromConverter environment.
 #'
 #' @name configure_python_environment
-#' @param parser Either \code{aston}, \code{rainbow}, or \code{olefile} (for
-#' \code{read_shimadzu_lcd}).
-#' @param return_boolean Logical. Whether to return a Boolean value indicating
-#' if the chromConverter environment is correctly configured.
-#' @return If \code{return_boolean} is \code{TRUE}, returns a Boolean value
-#' indicating whether the chromConverter environment is configured correctly.
-#' Otherwise, there is no return value.
+#' @param envname The name of, or path to, a Python virtual environment.
+#' @param what What kind of virtual environment to create. A python virtual
+#' environment (`"venv"`) or a conda environment (`"conda"`).
+#' @param python Argument to `reticulate::virtualenv_create`, specifying
+#' the path to a Python interpreter.
+#' @param ... Additional arguments to [reticulate::virtualenv_create] or
+#' [reticulate::conda_create] according to the value of `what`.
+#' @return There is no return value.
+#' @section Side effects:
+#' Creates and configures either  a python virtual environment or conda
+#' environment (according to the value of `what`) with all the packages
+#' required for running chromConverter.
 #' @author Ethan Bass
 #' @import reticulate
 #' @keywords internal
 #' @export
+#' @md
 
-configure_python_environment <- function(parser = "all", return_boolean = FALSE){
-  warning("This function is deprecated as of chromConverter v0.7.4 as
-             miniconda should no longer be necessary to load python dependencies. Continue anyway...? (y/n)",
-          immediate. = TRUE)
-  continue <- readline()
-  if (continue %in% c('y', "Y", "YES", "yes", "Yes")){
-    parser <- match.arg(tolower(parser), c("all", "aston", "olefile", "rainbow"))
-    install <- FALSE
-    if (!dir.exists(reticulate::miniconda_path())){
-      install <- readline(sprintf("It is recommended to install miniconda in your R library to use %s parsers. Install miniconda now? (y/n)",
-                                  ifelse(parser == "all", "python-based", parser)))
-      if (install %in% c('y', "Y", "YES", "yes", "Yes")){
-        reticulate::install_miniconda()
-      }
+configure_python_environment <- function(what = c("venv", "conda"),
+                                         envname = "chromConverter",
+                                         python = reticulate::virtualenv_starter(),
+                                         ...){
+  what <- match.arg(what, c("venv", "conda"))
+  packages <- c("Aston", "olefile", "pandas", "rainbow-api", "scipy")
+  install <- FALSE
+  if (!dir.exists(reticulate::miniconda_path())){
+    install <- readline(sprintf(
+      "It is recommended to install miniconda in your R library to use %s parsers. Install miniconda now? (y/n)"))
+    if (install %in% c('y', "Y", "YES", "yes", "Yes")){
+      reticulate::install_miniconda()
     }
-    env <- reticulate::configure_environment("chromConverter")
-    if (!env){
-      reqs <- get_parser_reqs(parser)
-      reqs_available <- sapply(reqs, reticulate::py_module_available)
-      if (!all(reqs_available)){
-        reticulate::conda_install(envname = "chromConverter",
-                                  reqs[which(!reqs_available)], pip = TRUE)
-      }
-    }
-    assign_fn <- switch(parser, aston = assign_trace_file(),
-                        rainbow = assign_rb_read(),
-                        function(){})
-    assign_fn()
-    if (return_boolean){
-      env
-    }
+  }
+  check_name <- switch(what, "venv" = reticulate::virtualenv_exists,
+                       "conda" = reticulate::condaenv_exists)
+  exists <- check_name(envname)
+  if (exists){
+    stop(sprintf('The %s environment, "%s" already exists. To create a new environment,
+                 please remove the existing environment first using `%s("%s")`.',
+                 switch(what,"venv" = "virtual", "conda" = "conda"), envname,
+                 switch(what, "venv" = "reticulate::virtualenv_remove",
+                        "conda" = "reticulate::conda_remove"),
+                 envname))
+  }
+  if (what == "venv"){
+    reticulate::virtualenv_create(envname = envname, packages = packages,
+                                  python = python, ...)
+  } else if (what == "conda"){
+    reticulate::conda_create(envname = envname,
+                             packages = c("olefile", "pandas", "scipy"), ...)
+    reticulate::conda_install(envname = envname,
+                              packages=c("Aston", "rainbow-api"), pip = TRUE)
   }
 }
 
@@ -406,7 +443,8 @@ get_parser_reqs <- function(parser){
   switch(tolower(parser), "aston" = c("pandas", "scipy", "numpy", "Aston"),
          "olefile" = c("olefile"),
          "rainbow" = c("numpy", "rainbow-api"),
-         "all" = c("pandas","scipy","numpy","Aston","olefile","numpy","rainbow-api"))
+         "all" = c("pandas", "scipy", "numpy", "Aston", "olefile",
+                   "numpy", "rainbow-api"))
 }
 
 #' Utility function to capitalize first letter of string
@@ -415,4 +453,33 @@ simple_cap <- function(x) {
   s <- strsplit(x, " ")[[1]]
   paste(toupper(substring(s, 1, 1)), substring(s, 2),
         sep = "", collapse = " ")
+}
+
+#' Get retention times
+#'
+#' Get retention times from a list of chromatograms or a `peak_table` object.
+#'
+#' If `data_format` attributes is not present, the data is assumed to be in
+#' wide format with retention times as rownames.
+#'
+#' @param x A chromatogram or list of chromatograms.
+#' @param idx Index of a chromatogram from which to extract retention times.
+#' @return Numeric vector of retention times from the chromatogram specified by
+#' `idx`.
+#' @family utility functions
+#' @noRd
+#' @md
+
+get_times <- function(x, idx = 1){
+  if (inherits(x, "chrom_list") | inherits(x, "list")){
+    x <- x[[idx]]
+  }
+  data_format <- attr(x, "data_format")
+  data_format <- ifelse(is.null(data_format), "wide", data_format)
+  x <- as.data.frame(x)
+  if (data_format == "long"){
+    unique(as.numeric(x[,1]))
+  } else{
+    as.numeric(rownames(x))
+  }
 }

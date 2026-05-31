@@ -4,15 +4,15 @@
 #' @param idx Indices of chromatograms to convert
 #' @param sample_var String with name of new column containing sample IDs.
 #' @param lambdas Wavelength(s) to include.
-#' @param data_format Whether to return data in \code{wide} or \code{long} format.
-#' @param combine Whether to combine chromatograms into a single \code{data.frame}
-#' (applicable only if \code{data_format} is TRUE).
-#' @param ... Additional arguments to \code{reshape_chrom}.
+#' @param data_format Whether to return data in `wide` or `long` format.
+#' @param combine Whether to combine chromatograms into a single `data.frame`
+#' (applicable only if `data_format` is `TRUE`).
+#' @param ... Additional arguments to `reshape_chrom`.
 #' @return A list of chromatographic matrices in long format.
 #' @author Ethan Bass
 #' @noRd
 reshape_chroms <- function(x, idx, sample_var = "sample", lambdas = NULL,
-                           data_format, combine = TRUE, ...){
+                           data_format, combine = TRUE, sparse = FALSE, ...){
   if (missing(data_format)){
     data_format <- switch(attr(x[[1]], "data_format"),
            long = "wide", wide = "long")
@@ -21,7 +21,6 @@ reshape_chroms <- function(x, idx, sample_var = "sample", lambdas = NULL,
     idx <- seq_along(x)
   }
   dat <- lapply(idx, function(i){
-
     xx <- reshape_chrom(x[[i]], lambdas = lambdas, data_format = data_format,
                         ...)
     if (data_format == "long"){
@@ -53,12 +52,12 @@ reshape_chrom <- function(x, data_format, ...){
 #' @importFrom stats reshape
 #' @param x A chromatographic matrix in wide format.
 #' @param lambdas Wavelength(s) to include.
-#' @param names_to Argument to \code{\link[tidyr]{pivot_longer}}
+#' @param names_to Argument to [tidyr::pivot_longer].
 #' @return A chromatographic matrix in long format.
 #' @author Ethan Bass
 #' @noRd
 reshape_chrom_long <- function(x, lambdas = NULL, format_out = NULL,
-                               names_to = "lambda"){
+                               names_to = "lambda", sparse = FALSE){
   if (!is.null(attr(x, "data_format")) && attr(x, "data_format") == "long"){
     warning("The data already appear to be in long format!", immediate. = TRUE)
   }
@@ -76,14 +75,19 @@ reshape_chrom_long <- function(x, lambdas = NULL, format_out = NULL,
     if (!is.null(lambdas)){
       xx <- xx[, lambdas, drop = FALSE]
     }
-    data <- data.frame(tidyr::pivot_longer(data.frame(rt = rownames(xx), xx,
-                                                      check.names = FALSE),
+    data <- data.table::data.table(tidyr::pivot_longer(
+      data.frame(rt = rownames(xx), xx, check.names = FALSE),
                                 cols = -c("rt"), names_to = names_to,
                                 values_to = "intensity"))
+    if (sparse){
+      data <- data[intensity != 0]
+    }
     data <- apply(data, 2, as.numeric)
   }
-  if (format_out == "matrix"){
-    data <- as.matrix(data)
+  if (format_out %in% c("matrix", "data.table")){
+    fn <- switch(format_out, "matrix"=as.matrix,
+              "data.table" = data.table::as.data.table)
+    data <- fn(data)
   }
   data <- transfer_metadata(data, x)
   attr(data, "data_format") <- "long"

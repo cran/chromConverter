@@ -16,20 +16,23 @@ read_thermoraw(
 \arguments{
 \item{path}{Path to 'Thermo' \code{.raw} file.}
 
-\item{path_out}{Path to directory to export \code{mzML} files. If
-\code{path_out} isn't specified, a temp directory will be used.}
+\item{path_out}{Path to directory to export \code{mzML} files. If \code{path_out} isn't
+specified, a temp directory will be used.}
 
-\item{format_out}{R format. Either \code{matrix} or \code{data.frame}.}
+\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame}, or
+\code{data.table}.}
 
-\item{read_metadata}{Whether to read metadata from file.}
+\item{read_metadata}{Logical. Whether to attach metadata. Defaults to \code{TRUE}.}
 
-\item{metadata_format}{Format to output metadata. Either \code{chromconverter} or
-\code{raw}.}
+\item{metadata_format}{Format to output metadata. Either \code{chromconverter}
+or \code{raw}.}
 
-\item{verbose}{Logical. Whether to print output from OpenChrom to the console.}
+\item{verbose}{Logical. Whether to print output from ThermoRawFileParser to
+the console.}
 }
 \value{
-A chromatogram in the format specified by \code{format_out}.
+A chromatogram in the format specified by the \code{format_out} and
+\code{data_format} arguments.
 }
 \description{
 Converts ThermoRawFiles to \code{mzML} by calling the \href{https://github.com/compomics/ThermoRawFileParser}{ThermoRawFileParser} from the command-line.
@@ -38,8 +41,8 @@ Converts ThermoRawFiles to \code{mzML} by calling the \href{https://github.com/c
 To use this function, the ThermoRawFileParser must be manually installed.
 }
 \section{Side effects}{
- Exports chromatograms in \code{mzML} format to the
-folder specified by \code{path_out}.
+ Exports chromatograms in \code{mzML} format to the folder
+specified by \code{path_out}.
 }
 
 \examples{
@@ -55,12 +58,12 @@ ThermoRawFileParser: Modular, Scalable, and Cross-Platform RAW File Conversion.
 \doi{10.1021/acs.jproteome.9b00328}.
 }
 \seealso{
-Other external parsers: 
-\code{\link{call_entab}()},
-\code{\link{call_openchrom}()},
-\code{\link{call_rainbow}()},
-\code{\link{sp_converter}()},
-\code{\link{uv_converter}()}
+Other external parsers:
+\code{\link[=call_entab]{call_entab()}},
+\code{\link[=call_openchrom]{call_openchrom()}},
+\code{\link[=call_rainbow]{call_rainbow()}},
+\code{\link[=sp_converter]{sp_converter()}},
+\code{\link[=uv_converter]{uv_converter()}}
 }
 \author{
 Ethan Bass

@@ -18,29 +18,26 @@ write_mzml(
 )
 }
 \arguments{
-\item{data}{List of data.frames or data.tables containing spectral data.}
+\item{data}{List of \code{data.frame}s or \code{data.table}s containing spectral data.}
 
 \item{path_out}{The path to write the file.}
 
 \item{sample_name}{The name of the file. If a name is not provided, the name
 will be derived from the \code{sample_name} attribute.}
 
-\item{what}{Which streams to write to mzML: \code{"ms1"}, \code{"ms2"},
-\code{"tic"}, \code{"bpc"}, and/or \code{"dad"}.}
+\item{what}{Which streams to write to mzML: \code{"MS1"}, \code{"MS2"}, \code{"TIC"},
+\code{"BPC"}, and/or \code{"DAD"}.}
 
 \item{instrument_info}{Instrument info to write to mzML file.}
 
-\item{compress}{Logical. Whether to use zlib compression. Defaults to
-\code{TRUE}.}
+\item{compress}{Logical. Whether to use zlib compression. Defaults to \code{TRUE}.}
 
-\item{indexed}{Logical. Whether to write indexed mzML. Defaults to
-\code{TRUE}.}
+\item{indexed}{Logical. Whether to write indexed mzML. Defaults to \code{TRUE}.}
 
 \item{force}{Logical. Whether to overwrite existing files at \code{path_out}.
 Defaults to \code{FALSE}.}
 
-\item{show_progress}{Logical. Whether to show progress bar. Defaults to
-\code{TRUE}.}
+\item{show_progress}{Logical. Whether to show progress bar. Defaults to \code{TRUE}.}
 
 \item{verbose}{Logical. Whether or not to print status messages.}
 }
@@ -55,15 +52,18 @@ methods based on an explicit Document Object Model (DOM).
 \details{
 The function supports writing various types of spectral data including MS1,
 TIC (Total Ion Current), BPC (Base Peak Chromatogram), and DAD
-(Diode Array Detector) data. Support for MS2 may be added in a future release.
+(Diode Array Detector) data. DAD spectra are written as electromagnetic
+radiation spectra (\code{MS:1000804}) using Thermo's naming convention with
+\code{controllerType=4} in the spectrum ID for compatibility with existing
+tools. Support for MS2 may be added in a future release.
 
 If \code{indexed = TRUE}, the function will generate an indexed mzML file, which
 allows faster random access to spectra.
 }
 \seealso{
-Other write functions: 
-\code{\link{write_andi_chrom}()},
-\code{\link{write_chroms}()}
+Other write functions:
+\code{\link[=write_andi_chrom]{write_andi_chrom()}},
+\code{\link[=write_chroms]{write_chroms()}}
 }
 \author{
 Ethan Bass

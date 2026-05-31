@@ -1,50 +1,45 @@
 #' Call 'rainbow' parsers
 #' Parse 'Agilent' or 'Waters' files with rainbow parsers
 #'
-#' Uses [rainbow](https://rainbow-api.readthedocs.io) parsers to read in Agilent (.D)
-#' and Waters (.raw) files. If \code{format_in} is \code{"agilent_d"} or
-#' \code{"waters_raw"}, a directory of the appropriate format (\code{.d} or
-#' \code{.raw}) should be provided to the \code{file} argument. If \code{format_in} is
-#' \code{"chemstation_uv"} a \code{.uv} file should be provided. Data can be filtered
-#' by detector type using the \code{what} argument.
+#' Uses [rainbow](https://rainbow-api.readthedocs.io) parsers to read in Agilent
+#' (`.D`) and Waters (`.raw`) files. If `format_in` is `"agilent_d"` or
+#' `"waters_raw"`, a directory of the appropriate format (`.D` or `.raw`) should
+#' be provided to the `path` argument. If `format_in` is `"chemstation_uv"` a
+#' `.uv` file should be provided. Data can be filtered by detector type using
+#' the `what` argument.
 #'
+#' @inheritParams shared_params
 #' @param path Path to file.
-#' @param format_in Format of the supplied files. Either \code{agilent_d},
-#' \code{waters_raw}, or \code{chemstation}.
-#' @param format_out R format. Either \code{matrix}, \code{data.frame}, or
-#' \code{data.table}.
-#' @param data_format Whether to return data in wide or long format.
-#' @param what What types of data to return (e.g. \code{MS}, \code{UV}, \code{CAD},
-#' \code{ELSD}). This argument only applies if \code{by == "detector"}.
-#' @param by How to order the list that is returned. Either \code{detector}
-#' (default) or \code{name}.
-#' @param read_metadata Logical. Whether to attach metadata. Defaults to TRUE.
-#' @param metadata_format Format to output metadata. Either \code{chromconverter}
-#' or \code{raw}.
-#' @param collapse Logical. Whether to collapse lists that only contain a single
-#' element.
+#' @param format_in Format of the supplied files. Either `agilent_d`,
+#' `waters_raw`, or `chemstation`.
+#' @param what What types of data to return (e.g. `MS`, `UV`, `CAD`,
+#' `ELSD`). This argument only applies if `by == "detector"`.
+#' @param by How to order the list that is returned. Either `detector` (default)
+#' or `name`.
 #' @param precision Number of decimals to round mz values. Defaults to 1.
+#' @param sparse Logical. Whether to return MS data in sparse format (excluding
+#' zeros). Defaults to `TRUE`. Applies only when data are requested in `long`
+#' format.
 #' @author Ethan Bass
-#' @return Returns a (nested) list of \code{matrices} or \code{data.frames} according to
-#' the value of \code{format_out}. Data is ordered according to the value of
-#' \code{by}.
+#' @return Returns a (nested) list of matrices or `data.frame`s according to
+#' the value of `format_out`. Data is ordered according to the value of `by`.
 #' @family external parsers
 #' @export
 
 call_rainbow <- function(path,
                          format_in = c("agilent_d", "waters_raw", "masshunter",
                                        "chemstation", "chemstation_uv",
-                                       "chemstation_fid"),
+                                       "chemstation_fid", "chemstation_ms"),
                          format_out = c("matrix", "data.frame", "data.table"),
                          data_format = c("wide", "long"),
                          by = c("detector", "name"), what = NULL,
                          read_metadata = TRUE,
                          metadata_format = c("chromconverter", "raw"),
-                         collapse = TRUE, precision = 1){
+                         collapse = TRUE, precision = 1, sparse = TRUE){
   check_rb_configuration()
   by <- match.arg(by, c("detector", "name"))
   format_out <- check_format_out(format_out)
-  data_format <- match.arg(data_format, c("wide", "long"))
+  data_format <- check_data_format(data_format, format_out)
   metadata_format <- match.arg(tolower(metadata_format),
                                c("chromconverter", "raw"))
   metadata_format <- switch(metadata_format, "chromconverter" = "rainbow", "")
@@ -76,7 +71,8 @@ call_rainbow <- function(path,
       dtr_dat <- lapply(dtr, function(xx){
         extract_rb_data(xx, format_out = format_out, data_format = data_format,
                         read_metadata = read_metadata, meta = x$metadata,
-                        metadata_format = metadata_format, source_file = path)
+                        metadata_format = metadata_format, source_file = path,
+                        sparse = sparse)
       })
       names(dtr_dat) <- extract_rb_names(dtr)
       if (collapse) dtr_dat <- collapse_list(dtr_dat)
@@ -86,19 +82,21 @@ call_rainbow <- function(path,
     xx <- lapply(x$datafiles, function(xx){
       extract_rb_data(xx, format_out = format_out, data_format = data_format,
                       read_metadata = read_metadata, meta = x$metadata,
-                      metadata_format = metadata_format, source_file = path)
+                      metadata_format = metadata_format, source_file = path,
+                      sparse = sparse)
     })
     names(xx) <- names(x$by_name)
   } else{
     xx <- extract_rb_data(x, format_out = format_out, data_format = data_format,
                           read_metadata = read_metadata, meta = x$metadata,
-                          metadata_format = metadata_format, source_file = path)
+                          metadata_format = metadata_format, source_file = path,
+                          sparse = sparse)
   }
   xx
 }
 
 #' Extract data with rainbow
-#' This function is called internally by \code{call_rainbow}.
+#' This function is called internally by `call_rainbow`.
 #' @author Ethan Bass
 #' @noRd
 extract_rb_data <- function(xx, format_out = "matrix",
@@ -106,8 +104,8 @@ extract_rb_data <- function(xx, format_out = "matrix",
                             read_metadata = TRUE,
                             metadata_format = "rainbow",
                             meta = NULL,
-                            source_file){
-  data_format <- match.arg(data_format, c("wide", "long"))
+                            source_file, sparse = TRUE){
+  data_format <- check_data_format(data_format, format_out)
   data <- xx$data
   try(rownames(data) <- xx$xlabels)
   colnames(data) <- xx$ylabels
@@ -115,9 +113,12 @@ extract_rb_data <- function(xx, format_out = "matrix",
     names_to <- switch(xx$detector, "MS" = "mz",
                                     "UV" = "lambda",
                                            "lambda")
-    data <- reshape_chrom(data, data_format = "long", names_to = names_to)
+    sparse <- ifelse(sparse && xx$detector=="MS", TRUE, FALSE)
+    data <- reshape_chrom(data, data_format = "long", names_to = names_to,
+                          sparse = sparse)
   }
-  data <- convert_chrom_format(data, format_out = format_out)
+  data <- convert_chrom_format(data, format_out = format_out,
+                               data_format = data_format)
   if (read_metadata){
     meta <- c(meta, xx$metadata, detector = xx$detector)
     data <- attach_metadata(data, meta = meta, format_in = metadata_format,
@@ -128,7 +129,7 @@ extract_rb_data <- function(xx, format_out = "matrix",
 }
 
 #' Extract 'rainbow' element names.
-#' This function is called internally by \code{call_rainbow}.
+#' This function is called internally by `call_rainbow`.
 #' @noRd
 extract_rb_names <- function(xx){
   sapply(xx, function(xxx){
@@ -137,7 +138,7 @@ extract_rb_names <- function(xx){
 }
 
 #' Assign 'rainbow' read
-#' This function is called internally by \code{call_rainbow}.
+#' This function is called internally by `call_rainbow`.
 #' @noRd
 assign_rb_read <- function(){
   pos <- 1
@@ -147,7 +148,7 @@ assign_rb_read <- function(){
 }
 
 #' Check 'rainbow' configuration
-#' This function is called internally by \code{call_rainbow}.
+#' This function is called internally by `call_rainbow`.
 #' @noRd
 check_rb_configuration <- function(){
   assign_rb_read()

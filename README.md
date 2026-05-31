@@ -2,10 +2,13 @@
 
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/chromConverter)](https://cran.r-project.org/package=chromConverter)
-[![chromConverter status badge](https://ethanbass.r-universe.dev/badges/chromConverter)](https://ethanbass.r-universe.dev)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6944342.svg)](https://doi.org/10.5281/zenodo.6944342)
+[![chromConverter status badge](https://ethanbass.r-universe.dev/badges/chromConverter)](https://ethanbass.r-universe.dev/chromConverter)
+[![Last commit](https://img.shields.io/github/last-commit/ethanbass/chromConverter)](https://github.com/ethanbass/chromConverter)
+<br>
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/chromConverter?color=blue)](https://r-pkg.org/pkg/chromConverter)
 [![metacran downloads](https://cranlogs.r-pkg.org/badges/last-month/chromConverter)](https://cran.r-project.org/package=chromConverter)
+<br>
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6944342.svg)](https://doi.org/10.5281/zenodo.6944342)
 <!-- badges: end -->
 
 **Table of contents:** [Overview](.#Overview) -
@@ -13,23 +16,26 @@
 
 ### Overview
 
-chromConverter aims to facilitate the conversion of chromatography data from various proprietary formats so it can be easily read into R for further analysis. It includes a number of parsers written directly in R as well as bindings to various external libraries including [Aston](https://github.com/bovee/aston), [Entab](https://github.com/bovee/entab), [rainbow](https://rainbow-api.readthedocs.io/), the [ThermoRawFileParser](https://github.com/compomics/ThermoRawFileParser), [OpenChrom](https://lablicate.com/platform/openchrom) and [RaMS](https://github.com/wkumler/RaMS/).
+chromConverter aims to facilitate the conversion of chromatography data from various proprietary formats so it can be easily read into R for further analysis. chromConverter supports open science and reproducible research by promoting data interoperability and reducing dependence on vendor-specific software, . It includes a number of parsers written directly in R as well as bindings to various external libraries including [Aston](https://github.com/bovee/aston), [Entab](https://github.com/bovee/entab), [rainbow](https://rainbow-api.readthedocs.io/), the [ThermoRawFileParser](https://github.com/compomics/ThermoRawFileParser), [OpenChrom](https://lablicate.com/platform/openchrom) and [RaMS](https://github.com/wkumler/RaMS/).
 
 ### Formats
 
 ##### ChromConverter (internal parsers)
 - 'Agilent ChemStation' & 'OpenLab' `.uv` files (versions 131, 31)
 - 'Agilent ChemStation' & 'OpenLab' `.ch` files (versions 30, 130, 8, 81, 179, 181)
+- 'Agilent OpenLab' `.dx`, `acaml`, and `amx` files.
 - Allotrope® Simple Model (ASM) 2D chromatograms (`.asm`)
 - ANDI (Analytical Data Interchange) Chromatography & MS formats (`.cdf`)
 - mzML (`.mzml`) & mzXML (.`mzxml`) (via *RaMS*).
 - 'Shimadzu LabSolutions' ascii (`.txt`)
 - 'Shimadzu GCsolution' data files (`.gcd`)
 - 'Shimadzu GCMSsolution' data files (`.qgd`) 
-- 'Shimadzu LabSolutions'`.lcd` (*provisional support* for PDA, chromatogram, and peak table streams)
+- 'Shimadzu LabSolutions'`.lcd` (PDA, chromatogram, and peak table streams)
 - 'Thermo Scientific Chromeleon' ascii (`.txt`)
 - 'Varian Workstation' (`.SMS`)
 - 'Waters Empower' ascii (`.arw`)
+- 'Waters Empower' `.raw` files (2D chromatograms only)
+- Chromatotec `.Chrom` files.
 
 ##### External Libraries
 
@@ -64,21 +70,21 @@ install.packages("chromConverter")
 However, it's recommended to install the development version of chromConverter from GitHub as follows:
 
 ```
-install.packages("remotes")
-remotes::install_github("https://github.com/ethanbass/chromConverter/")
+if (!require("pak", quietly=TRUE)) install.packages("pak")
+pak::pak("ethanbass/chromConverter")
 ```
 
 or from [R Universe](https://r-universe.dev/):
 
 ```
-install.packages("chromConverter", repos="https://ethanbass.r-universe.dev/", type="source")
+install.packages("chromConverter", repos="https://ethanbass.r-universe.dev/")
 ```
 
 ### Usage
 
 ##### Importing chromatograms
 
-The workhorse of chromConverter is the `read_chroms` function, which functions as a wrapper around all of the supported parsers. To convert files, call `read_chroms`, specifying the `paths` to a vector of directories or files and the appropriate file format (`format_in`). Supported formats include `chemstation_uv`, `chemstation_csv`, `masshunter_dad`, `shimadzu_fid`, `shimadzu_dad`, `chromeleon_uv`, `thermoraw`, `mzml`, `waters_arw`, `msd`, `csd`, and `wsd`.
+The central function of chromConverter is `read_chroms`, which functions as a wrapper around all of the supported parsers. To convert a set of files, call `read_chroms`, specifying the `paths` to a vector of directories or files and the appropriate file format (`format_in`). Supported formats include `chemstation_uv`, `chemstation_csv`, `masshunter_dad`, `shimadzu_fid`, `shimadzu_dad`, `chromeleon_uv`, `thermoraw`, `mzml`, `waters_arw`, `msd`, `csd`, and `wsd`.
 
 ```
 library(chromConverter)
@@ -126,7 +132,7 @@ To install Aston, call the `configure_aston()` function to install miniconda alo
 
 ##### **Entab**
 
-[Entab](https://github.com/bovee/entab) is a Rust-based parsing framework for converting a variety of scientific file formats into tabular data. To use parsers from Entab, you must first install [Rust](https://www.rust-lang.org/tools/install) and Entab-R. After following the [instructions](https://www.rust-lang.org/tools/install) to install Rust, you can install Entab from GitHub as follows:
+[Entab](https://github.com/bovee/entab) is a Rust-based parsing framework for converting a variety of scientific file formats into tabular data. To use parsers from Entab, you must first install Rust and Entab-R. After following the [instructions](https://rust-lang.org/tools/install/) to install Rust, you can install Entab from GitHub as follows:
 
 ```
 remotes::install_github("https://github.com/bovee/entab/", subdir = "entab-r")
@@ -153,7 +159,7 @@ For downstream analyses of chromatographic data, you can also check out my packa
 
 Contributions of source code, ideas, or documentation are always welcome. Please get in touch (preferable by opening a GitHub [issue](https://github.com/ethanbass/chromatographR/issues)) to discuss any suggestions or to file a bug report. Some good reasons to file an issue:
 
-- You've found an actual bug.  
+- You think you've found a bug.  
 - You're getting a cryptic error message that you don't understand.  
 - You have a file format you'd like to read that isn't currently supported by chromConverter.  (Please make sure to attach example files or a link to the files).  
 - There's another new feature you'd like to see implemented.  
@@ -168,6 +174,6 @@ Contributions of source code, ideas, or documentation are always welcome. Please
 
 You can cite chromConverter as follows:
 
-Bass, E. (2024). chromConverter: Chromatographic File Converter. http://doi.org/10.5281/zenodo.6792521.
+Bass, E. (2026). chromConverter: Chromatographic File Converter. http://doi.org/10.5281/zenodo.6792521.
 
 If you use external libraries to convert your files, it is suggested to also cite these libraries in published work.

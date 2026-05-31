@@ -1,15 +1,15 @@
 #' Read 'Shimadzu' QGD files
 #'
-#' Reads 'Shimadzu GCMSsolution' \code{.qgd} GC-MS data files.
+#' Reads 'Shimadzu GCMSsolution' `.qgd` GC-MS data files.
 #'
 #' The MS data is stored in the "GCMS Raw Data" storage, which contains a
-#' \code{MS Raw Data} stream with MS scans, a \code{TIC Data} stream containing
-#' the total ion chromatogram, and a \code{Retention Time} stream containing the
-#' retention times. All known values are little-endian. The retention time
-#' stream is a simple array of 4-byte integers. The TIC stream is a simple array
-#' of 8-byte integers corresponding to retention times stored in the
-#' retention time stream. The MS Raw Data stream is blocked by retention time.
-#' Each block begins with a header consisting of the following elements:
+#' `MS Raw Data` stream with MS scans, a `TIC Data` stream containing the total
+#' ion chromatogram, and a `Retention Time` stream containing the retention
+#' times. All known values are little-endian. The retention time stream is a
+#' simple array of 4-byte integers. The TIC stream is a simple array of 8-byte
+#' integers corresponding to retention times stored in the retention time stream.
+#' The MS Raw Data stream is blocked by retention time. Each block begins with a
+#' header consisting of the following elements:
 #' * scan number (4-byte integer)
 #' * retention time (4-byte integer)
 #' * unknown (12-bytes)
@@ -21,32 +21,21 @@
 #' is scaled by a factor of 20. Intensities are encoded as (unsigned) integers
 #' with variable byte-length defined by the value in the header.
 #'
-#' @param path Path to 'Shimadzu' \code{.qgd} file.
-#' @param what What stream to get: current options are \code{MS1} and/or
-#' \code{TIC}. If a stream is not specified, the function will return both
-#' streams.
-#' @param format_out Matrix or data.frame.
-#' @param data_format Either \code{wide} (default) or \code{long}.
-#' @param read_metadata Logical. Whether to attach metadata. Defaults to \code{TRUE}.
-#' @param metadata_format Format to output metadata. Either \code{chromconverter}
-#' or \code{raw}.
-#' @param collapse Logical. Whether to collapse lists that only contain a single
-#' element. Defaults to \code{TRUE}.
-#' @return A 2D chromatogram from the chromatogram stream in \code{matrix},
-#' \code{data.frame}, or \code{data.table} format, according to the value of
-#' \code{format_out}. The chromatograms will be returned in \code{wide} or
-#' \code{long} format according to the value of \code{data_format}.
+#' @inheritParams shared_params
+#' @param path Path to 'Shimadzu' `.qgd` file.
+#' @param what What stream to get: current options are `MS1` and/or `TIC`. If a
+#' stream is not specified, the function will return both streams.
+#' @inherit generic_return_2D return
 #' @note This parser is experimental and may still need some work. It is not
 #' yet able to interpret much metadata from the files.
 #' @return A chromatogram or list of chromatograms in the format specified by
-#' \code{data_format} and \code{format_out}. If \code{data_format} is \code{wide},
-#' the chromatogram(s) will be returned with retention times as rows and a
-#' single column for the intensity. If \code{long} format is requested, two
-#' columns will be returned: one for the retention time and one for the intensity.
-#' The \code{format_out} argument determines whether chromatograms are returned
-#' as a \code{matrix}, \code{data.frame}, or \code{data.table}. Metadata can be
-#' attached to the chromatogram as \code{\link{attributes}} if
-#' \code{read_metadata} is \code{TRUE}.
+#' `data_format` and `format_out`. If `data_format` is `wide`, the
+#' chromatogram(s) will be returned with retention times as rows and a single
+#' column for the intensity. If `long` format is requested, two columns
+#' will be returned: one for the retention time and one for the intensity.
+#' The `format_out` argument determines whether chromatograms are returned
+#' as a `matrix`, `data.frame`, or `data.table`. Metadata will be
+#' attached to the chromatogram as [attributes] if `read_metadata` is `TRUE`.
 #' @author Ethan Bass
 #' @family 'Shimadzu' parsers
 #' @export
@@ -59,7 +48,7 @@ read_shimadzu_qgd <- function(path, what = c("MS1", "TIC"),
                               metadata_format = c("chromconverter", "raw"),
                               collapse = TRUE){
   format_out <- check_format_out(format_out)
-  data_format <- match.arg(data_format, c("wide", "long"))
+  data_format <- check_data_format(data_format, format_out)
   what <- match.arg(toupper(what), c("MS1", "TIC"), several.ok = TRUE)
   metadata_format <- match.arg(metadata_format, c("chromconverter", "raw"))
   metadata_format <- switch(metadata_format, "chromconverter" = "shimadzu_lcd",
@@ -77,17 +66,18 @@ read_shimadzu_qgd <- function(path, what = c("MS1", "TIC"),
     MS1 <- read_qgd_ms_stream(path, format_out = format_out)
   }
   dat <- mget(what)
-  if (collapse)
-    dat <- collapse_list(dat)
   if (read_metadata){
     meta <- try(read_qgd_fp(path))
     meta$time.unit <- "Minutes"
-    dat <- lapply(dat, function(x){
+    dat <- purrr::imap(dat, function(x, h){
       attach_metadata(x, meta, format_in = metadata_format,
                       source_file = path, source_file_format = "shimadzu_qgd",
-                      data_format = data_format,
+                      data_format = ifelse(h == "MS1", "long", data_format),
                       format_out = format_out)
     })
+  }
+  if (collapse){
+    dat <- collapse_list(dat)
   }
   dat
 }
@@ -120,10 +110,10 @@ read_qgd_tic <- function(path, format_out = "data.frame",
   dat
 }
 
-#' Read 'Shimadzu' QGD MS block
+#' Read 'Shimadzu' QGD MS scan
 #' @author Ethan Bass
 #' @noRd
-read_qgd_ms_block <- function(f){
+read_qgd_ms_scan <- function(f, offsets, scan_no){
   scan <- readBin(f, "integer", size = 4, endian = "little")
   rt <- readBin(f, "integer", size = 4, endian = "little")
   u1 <- readBin(f, "integer", size = 4, endian = "little")
@@ -135,6 +125,17 @@ read_qgd_ms_block <- function(f){
   # number of values in block
   nval <- readBin(f, "integer", size = 2, endian = "little")
   readBin(f, "integer", size = 4, endian = "little", n = 2) #skip
+
+  expected_block_size <- 32 + nval * (2 + n_bytes)
+  actual_block_size <- offsets[scan_no+1] - offsets[scan_no]
+  if (expected_block_size != actual_block_size){
+    data_size <- actual_block_size - 32
+    n_bytes <- match(data_size, nval * (2 + 1:5))
+    if (is.na(n_bytes)){
+      stop(sprintf("Cannot resolve block size mismatch at scan `%d`: offset `%d`.",
+                   scan_no, offsets[scan_no]))
+    }
+  }
 
   mat <- matrix(NA, nrow = nval, ncol = 4,
                 dimnames = list(NULL, c("scan", "rt", "mz", "intensity")))
@@ -157,6 +158,9 @@ read_qgd_ms_block <- function(f){
   }
   mat[,3] <- mat[,3]/20
   mat[,"rt"] <- mat[,"rt"]/60000
+  if (n_bytes == 4){
+    mat[,4] <- bitwAnd(mat[,4],0x7FFFFFFF)
+  }
   mat
 }
 
@@ -189,11 +193,19 @@ read_qgd_ms_stream <- function(path, format_out = "data.frame"){
   rts <- read_qgd_retention_times(path)
 
   path_ms <- export_stream(path, c("GCMS Raw Data", "MS Raw Data"))
+
+  offsets <- get_spectrum_offsets(path)
+  offsets <- c(offsets, file.info(path_ms)$size)
+
   f <- file(path_ms, "rb")
   on.exit(close(f))
 
   xx <- lapply(seq_along(rts), function(i){
-    read_qgd_ms_block(f)
+    tryCatch({
+      read_qgd_ms_scan(f, offsets = offsets, scan_no = i)
+    }, error = function(e) stop(sprintf("Failed to read scan %d: %s",
+                                        i, conditionMessage(e)))
+    )
   })
   dat <- do.call(rbind, xx)
   dat <- convert_chrom_format(dat, format_out = format_out)
@@ -250,4 +262,16 @@ get_sz_qgd_offsets <- function(){
         c(field = "SampleInfoFile.datafile", offset = 580, type = "character"),
         c(field = "SampleInfoFile.batchfile", offset = 1604, type = "character"),
         c(field = "SampleInfoFile.methodfile", offset = 2116, type = "character"))
+}
+
+#' Get 'Shimadzu' QGD spectrum index
+#' @noRd
+get_spectrum_offsets <- function(path){
+  path_spectrum_index <- export_stream(path, c("GCMS Raw Data", "Spectrum Index"))
+  f <- file(path_spectrum_index, "rb")
+  on.exit(close(f))
+  n_scans <- file.info(path_spectrum_index)$size/4
+  offsets <- readBin(f, what = "integer", size = 4, endian = "little",
+                     n = n_scans)
+  offsets
 }

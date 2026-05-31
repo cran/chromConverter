@@ -15,19 +15,19 @@ read_waters_arw(
 \arguments{
 \item{path}{Path to Waters \code{.arw} file.}
 
-\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame},
-or \code{data.table}.}
+\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame}, or
+\code{data.table}.}
 
-\item{data_format}{Whether to return data in \code{wide} or \code{long} format.}
+\item{data_format}{Whether to return data in \code{wide} (default) or \code{long} format.}
 
-\item{read_metadata}{Whether to read metadata from file.}
+\item{read_metadata}{Logical. Whether to attach metadata. Defaults to \code{TRUE}.}
 
 \item{metadata_format}{Format to output metadata. Either \code{chromconverter}
 or \code{raw}.}
 }
 \value{
-A chromatogram in the format specified by \code{format_out}
-(retention time x wavelength).
+A chromatogram in the format specified by the \code{format_out} and
+\code{data_format} arguments.
 }
 \description{
 Reads 'Waters' ASCII \code{.arw} files.
@@ -37,8 +37,8 @@ For help exporting files from Empower, you can consult the official
 documentation: \href{https://support.waters.com/KB_Inf/Empower_Breeze/WKB77571_How_to_export_3D_raw_data_from_Empower_to_a_Microsoft_Excel_spreadsheet}{How_to_export_3D_raw_data_from_Empower}.
 }
 \seealso{
-Other 'Waters' parsers: 
-\code{\link{read_waters_raw}()}
+Other 'Waters' parsers:
+\code{\link[=read_waters_raw]{read_waters_raw()}}
 }
 \author{
 Ethan Bass

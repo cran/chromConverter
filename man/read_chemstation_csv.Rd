@@ -6,18 +6,27 @@
 \usage{
 read_chemstation_csv(
   path,
-  format_out = c("matrix", "data.frame", "data.table")
+  format_out = "matrix",
+  data_format = "wide",
+  read_metadata = TRUE
 )
 }
 \arguments{
 \item{path}{Path to 'Agilent' \code{.csv} file.}
 
-\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame},
-or \code{data.table}.}
+\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame}, or
+\code{data.table}.}
+
+\item{data_format}{Whether to return data in \code{wide} (default) or \code{long} format.}
+
+\item{read_metadata}{Logical. Whether to attach metadata. Defaults to
+\code{TRUE}. There is no instrumental metadata saved in the CSV files so this
+will only attach metadata about the settings used by chromConverter to parse
+the file.}
 }
 \value{
-A chromatogram in the format specified by \code{format_out}
-(retention time x wavelength).
+A chromatogram in the format specified by \code{format_out} and
+\code{data_format}.
 }
 \description{
 Reads 'Agilent Chemstation' \code{.csv} files.
@@ -31,13 +40,13 @@ read_chemstation_csv("tests/testthat/testdata/dad1.csv")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-Other 'Agilent' parsers: 
-\code{\link{read_agilent_d}()},
-\code{\link{read_agilent_dx}()},
-\code{\link{read_chemstation_ch}()},
-\code{\link{read_chemstation_ms}()},
-\code{\link{read_chemstation_reports}()},
-\code{\link{read_chemstation_uv}()}
+Other 'Agilent' parsers:
+\code{\link[=read_agilent_d]{read_agilent_d()}},
+\code{\link[=read_agilent_dx]{read_agilent_dx()}},
+\code{\link[=read_chemstation_ch]{read_chemstation_ch()}},
+\code{\link[=read_chemstation_ms]{read_chemstation_ms()}},
+\code{\link[=read_chemstation_reports]{read_chemstation_reports()}},
+\code{\link[=read_chemstation_uv]{read_chemstation_uv()}}
 }
 \author{
 Ethan Bass

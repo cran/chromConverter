@@ -10,16 +10,17 @@ read_chemstation_ch(
   data_format = c("wide", "long"),
   read_metadata = TRUE,
   metadata_format = c("chromconverter", "raw"),
-  scale = TRUE
+  scale = TRUE,
+  source_file = NULL
 )
 }
 \arguments{
 \item{path}{Path to 'Agilent' \code{.ch} file.}
 
-\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame},
-or \code{data.table}.}
+\item{format_out}{Class of output. Either \code{matrix}, \code{data.frame}, or
+\code{data.table}.}
 
-\item{data_format}{Whether to return data in \code{wide} or \code{long} format.}
+\item{data_format}{Whether to return data in \code{wide} (default) or \code{long} format.}
 
 \item{read_metadata}{Logical. Whether to attach metadata. Defaults to \code{TRUE}.}
 
@@ -29,16 +30,19 @@ or \code{raw}.}
 \item{scale}{Whether to scale the data by the scaling factor present in the
 file. Defaults to \code{TRUE}. 'MassHunter' seems to ignore the scaling
 factor in at least some types of 'ChemStation' files.}
+
+\item{source_file}{Source file from which chromatogram data was originally
+derived.}
 }
 \value{
 A 2D chromatogram in the format specified by \code{data_format} and
-\code{format_out}. If \code{data_format} is \code{wide}, the chromatogram will
-be returned with retention times as rows and a single column for the intensity.
-If \code{long} format is requested, two columns will be returned: one for the
+\code{format_out}. If \code{data_format} is \code{wide}, the chromatogram will be returned
+with retention times as rows and a single column for the intensity. If \code{long}
+format is requested, two columns will be returned: one for the
 retention time and one for the intensity. The \code{format_out} argument
-determines whether the chromatogram is returned as a \code{matrix},
-\code{data.frame}, or \code{data.table}. Metadata can be attached to the
-chromatogram as \code{\link{attributes}} if \code{read_metadata} is \code{TRUE}.
+determines whether the chromatogram is returned as a \code{matrix}, \code{data.frame},
+or \code{data.table}. Metadata can be attached to the chromatogram as \link{attributes}
+if \code{read_metadata} is \code{TRUE}.
 }
 \description{
 Reads 'Agilent ChemStation' \code{.ch} files.
@@ -48,12 +52,11 @@ Reads 'Agilent ChemStation' \code{.ch} files.
 can automatically detect and read several versions of these files from
 'Agilent ChemStation' and 'Agilent OpenLab', including versions \code{30} and
 \code{130}, which are generally produced by ultraviolet detectors, as well as
-\code{81}, \code{179}, and \code{181} which are generally produced by flame
-ionization (FID) detectors.
+\code{81}, \code{179}, and \code{181} which are generally produced by flame ionization (FID)
+detectors.
 }
 \note{
-This function was adapted from the
-\href{https://github.com/chemplexity/chromatography}{Chromatography Toolbox}
+This function was adapted from the \href{https://github.com/chemplexity/chromatography}{Chromatography Toolbox}
 (© James Dillon 2014).
 }
 \examples{
@@ -62,13 +65,13 @@ read_chemstation_ch("tests/testthat/testdata/chemstation_130.ch")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-Other 'Agilent' parsers: 
-\code{\link{read_agilent_d}()},
-\code{\link{read_agilent_dx}()},
-\code{\link{read_chemstation_csv}()},
-\code{\link{read_chemstation_ms}()},
-\code{\link{read_chemstation_reports}()},
-\code{\link{read_chemstation_uv}()}
+Other 'Agilent' parsers:
+\code{\link[=read_agilent_d]{read_agilent_d()}},
+\code{\link[=read_agilent_dx]{read_agilent_dx()}},
+\code{\link[=read_chemstation_csv]{read_chemstation_csv()}},
+\code{\link[=read_chemstation_ms]{read_chemstation_ms()}},
+\code{\link[=read_chemstation_reports]{read_chemstation_reports()}},
+\code{\link[=read_chemstation_uv]{read_chemstation_uv()}}
 }
 \author{
 Ethan Bass

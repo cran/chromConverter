@@ -10,7 +10,7 @@ read_varian_peaklist(path)
 \item{path}{Path to 'Varian' peak list file.}
 }
 \value{
-A data.frame containing the information from the specified report.
+A \code{data.frame} containing the information from the specified report.
 }
 \description{
 Read peak list(s) from 'Varian MS Workstation'.
@@ -21,8 +21,8 @@ read_varian_peaklist(path)
 }
 }
 \seealso{
-Other 'Varian' parsers: 
-\code{\link{read_varian_sms}()}
+Other 'Varian' parsers:
+\code{\link[=read_varian_sms]{read_varian_sms()}}
 }
 \author{
 Ethan Bass

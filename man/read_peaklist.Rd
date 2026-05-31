@@ -8,7 +8,7 @@ read_peaklist(
   paths,
   find_files,
   format_in = c("chemstation", "shimadzu_fid", "shimadzu_dad", "shimadzu_lcd",
-    "shimadzu_gcd"),
+    "shimadzu_gcd", "chromatotec"),
   pattern = NULL,
   data_format = c("chromatographr", "original"),
   metadata_format = c("chromconverter", "raw"),
@@ -22,41 +22,42 @@ read_peaklist(
 
 \item{find_files}{Logical. Set to \code{TRUE} (default) if you are providing
 the function with a folder or vector of folders containing the files.
-Otherwise, set to\code{FALSE}.}
+Otherwise, set to \code{FALSE}.}
 
 \item{format_in}{Format of files to be imported/converted. Current options
-include: \code{chemstation}, \code{shimadzu_fid}, \code{shimadzu_dad},
-\code{shimadzu_lcd}, and \code{shimadzu_gcd}.}
+include: \code{chemstation}, \code{shimadzu_fid}, \code{shimadzu_dad}, \code{shimadzu_lcd}, and
+\code{shimadzu_gcd}.}
 
-\item{pattern}{pattern (e.g. a file extension). Defaults to NULL, in which
-case file extension will be deduced from \code{format_in}.}
+\item{pattern}{A pattern (e.g. a file extension). Defaults to \code{NULL}, in
+which case the file extension will be deduced from \code{format_in}.}
 
 \item{data_format}{Either \code{chromatographr} or \code{original}.}
 
-\item{metadata_format}{Format to output metadata. Either \code{chromconverter} or
-\code{raw}.}
+\item{metadata_format}{Format to output metadata. Either \code{chromconverter}
+or \code{raw}.}
 
-\item{read_metadata}{Logical, whether to attach metadata (if it's available).
-Defaults to TRUE.}
+\item{read_metadata}{Logical. Whether to attach metadata. Defaults to \code{TRUE}.}
 
-\item{progress_bar}{Logical. Whether to show progress bar. Defaults to
-\code{TRUE} if \code{\link[pbapply]{pbapply}} is installed.}
+\item{progress_bar}{Logical. Whether to show progress bar. Defaults to \code{TRUE}
+if \code{pbapply} is installed.}
 
-\item{cl}{Argument to \code{\link[pbapply]{pbapply}} specifying the number
+\item{cl}{Argument to \link[pbapply:pbapply]{pbapply} specifying the number
 of clusters to use or a cluster object created by
-\code{\link[parallel]{makeCluster}}. Defaults to 1.}
+\link[parallel:makeCluster]{makeCluster}. Defaults to \code{1}.}
 }
 \value{
-A list of chromatograms in \code{matrix} or \code{data.frame} format,
-according to the value of \code{format_out}.
+A list of \code{data.frame}s containing information about peaks where
+each list element represents a sample and each row represents an individual
+peak in that sample.
 }
 \description{
 Reads peak lists from specified folders or vector of paths.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
-path <- "tests/testthat/testdata/dad1.uv"
-chr <- read_chroms(path, find_files = FALSE, format_in = "chemstation_uv")
+path <- "tests/testthat/testdata/RUTIN2.D"
+peak_list <- read_peaklist(path)
+peak_list[["RUTIN2"]][["254"]]
 \dontshow{\}) # examplesIf}
 }
 \author{
